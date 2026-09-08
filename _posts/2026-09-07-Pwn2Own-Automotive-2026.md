@@ -49,8 +49,6 @@ Although we did not use it in our final exploit chain, we found a similar vulner
 Special characters can be injected into the `/import` endpoint on port 5001, targeting the `CellularNetwork/idledisconnect` field in `configuration.ini`.  
 Therefore, the following shows an example of the insertion and its result.  
 
-![special_character](/assets/img/pwn2own/Auto_2026/special_character.png){: style="max-width: 90%; display: block; margin: 10px auto;" }
-
 ![special_character_inject](/assets/img/pwn2own/Auto_2026/special_character_inject.png){: style="max-width: 80%; display: block; margin: 10px auto;" }
 
 The `PPP` component allows a shell command to be specified through its `connect` option.
