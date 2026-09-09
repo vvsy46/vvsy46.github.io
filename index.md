@@ -147,6 +147,11 @@ permalink: /
       <td><span class="sev sev-med">6.4 · Medium</span></td>
       <td>CWE-696</td>
     </tr>
+    <tr>
+      <td class="cid"><a href="https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-50349">CVE-2026-50349</a></td>
+      <td><span class="sev sev-med">7.0 · High</span></td>
+      <td>CWE-362, CWE-416</td>
+    </tr>
   </tbody>
 </table>
 </div>
