@@ -92,6 +92,7 @@ permalink: /
   <thead>
     <tr>
       <th>CVE</th>
+      <th>Target</th>
       <th>Severity</th>
       <th>Weakness</th>
     </tr>
@@ -99,57 +100,68 @@ permalink: /
   <tbody>
     <tr>
       <td class="cid"><a href="https://www.cve.org/CVERecord?id=CVE-2025-51005">CVE-2025-51005</a></td>
+      <td>tcpreplay</td>
       <td><span class="sev sev-high">7.5 · High</span></td>
       <td>CWE-122</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://www.cve.org/CVERecord?id=CVE-2025-51006">CVE-2025-51006</a></td>
+      <td>tcpreplay</td>
       <td><span class="sev sev-high">7.8 · High</span></td>
       <td>CWE-415</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://www.cve.org/CVERecord?id=CVE-2026-27625">CVE-2026-27625</a></td>
+      <td>Stirling-PDF</td>
       <td><span class="sev sev-high">8.1 · High</span></td>
       <td>CWE-22, CWE-23</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://www.cve.org/CVERecord?id=CVE-2026-27691">CVE-2026-27691</a></td>
+      <td>iccDEV</td>
       <td><span class="sev sev-med">6.2 · Medium</span></td>
       <td>CWE-190, CWE-681</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://www.cve.org/CVERecord?id=CVE-2026-28354">CVE-2026-28354</a></td>
+      <td>ClipBucket v5</td>
       <td><span class="sev sev-med">5.7 · Medium</span></td>
       <td>CWE-639, CWE-863</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-507/">[Pwn2Own] ZDI-CAN-29108 · CVE-2026-44095</a></td>
+      <td>CHARX-SEC-31XX</td>
       <td><span class="sev sev-high">7.8 · High</span></td>
       <td>CWE-78</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-508/">[Pwn2Own] ZDI-CAN-29109 · CVE-2026-44096</a></td>
+      <td>CHARX-SEC-31XX</td>
       <td><span class="sev sev-high">7.8 · High</span></td>
       <td>CWE-78</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-513/">[Pwn2Own] ZDI-CAN-29110 · CVE-2026-44097</a></td>
+      <td>CHARX-SEC-31XX</td>
       <td><span class="sev sev-low">2.4 · Low</span></td>
       <td>CWE-434</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://assets.phoenixcontact.com/file/e789620a-b5fb-4618-9374-86c78948f26a/media/original?pcsa-2026-00006_vde-2026-008.pdf">[Pwn2Own] CVE-2026-44107</a></td>
+      <td>CHARX-SEC-31XX</td>
       <td><span class="sev sev-med">6.5 · Medium</span></td>
       <td>CWE-749</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://assets.phoenixcontact.com/file/e789620a-b5fb-4618-9374-86c78948f26a/media/original?pcsa-2026-00006_vde-2026-008.pdf">[Pwn2Own] CVE-2026-44108</a></td>
+      <td>CHARX-SEC-31XX</td>
       <td><span class="sev sev-med">6.4 · Medium</span></td>
       <td>CWE-696</td>
     </tr>
     <tr>
       <td class="cid"><a href="https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-50349">CVE-2026-50349</a></td>
-      <td><span class="sev sev-med">7.0 · High</span></td>
+      <td>Windows AFD.sys</td>
+      <td><span class="sev sev-high">7.0 · High</span></td>
       <td>CWE-362, CWE-416</td>
     </tr>
   </tbody>
