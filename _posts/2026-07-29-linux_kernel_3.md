@@ -333,6 +333,8 @@ $ hb chardev_write
 위처럼 볼 수 있다.  
 여기서 gef가 커널 디버깅에 가장 잘 어울린다고 한다.  
 
+## 4. Make Simple Script
+### 4-1. Qemu Script
 참고로 위의 qemu 실행을 쉘 스크립트로 구현할 수 있는데,  
 ```sh
 $ qemu-system-x86_64 \
@@ -348,6 +350,7 @@ $ qemu-system-x86_64 \
 ```
 위와 비슷하게 구현하면 된다고 한다.  
 
+### 4-2. init script
 또한, init 파일도 수정하면
 ```sh
 #!/bin/sh
@@ -385,3 +388,37 @@ umount /sys
 poweroff -d 0  -f
 ```
 위를 통해 init process 실행 시 초기화가 진행된다고 한다.  
+
+### 4-3. KASLR
+추가로 vmlinux 기준 _text와 실제 실행 중의 _text가 다를 수 있다.
+```sh
+# gdb
+(gdb) p/x &_text
+$3 = 0xffffffff81000000
+
+# qemu terminal
+$ grep ' T _text$' /tmp/kallsyms
+ffffffffa2a00000 T _text
+```
+이 경우 gdb에서 KASLR을 계산하여 offset을 맞춰주면 된다.
+```sh
+delete breakpoints
+
+set $runtime_text = 0xffffffffa2a00000
+set $link_text = 0xffffffff81000000
+set $slide = $runtime_text - $link_text
+p/x $slide
+
+symbol-file
+symbol-file -o $slide ./vmlinux
+```
+
+```sh
+# gdb
+(gdb) p/x &_text
+$5 = 0xffffffffa2a00000
+
+# qemu terminal
+$ grep ' T _text$' /tmp/kallsyms
+ffffffffa2a00000 T _text
+```
