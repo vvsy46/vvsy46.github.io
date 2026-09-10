@@ -352,7 +352,7 @@ $ qemu-system-x86_64 \
 ```sh
 #!/bin/sh
 
-mkdir -p /proc /sys /dev /tmp /root
+mkdir -p /proc /sys /dev /tmp /root /etc
 
 mount -t proc none /proc
 mount -t sysfs none /sys
@@ -361,8 +361,22 @@ mount -t tmpfs none /tmp
 
 chmod 777 /tmp
 echo "7 4 1 7" > /proc/sys/kernel/printk
+
 cp /proc/kallsyms /tmp/kallsyms
 chmod 644 /tmp/kallsyms
+
+cat > /etc/passwd <<EOF
+root:x:0:0:root:/root:/bin/sh
+user:x:1000:1000:user:/home/user:/bin/sh
+EOF
+
+cat > /etc/group <<EOF
+root:x:0:
+user:x:1000:
+EOF
+
+chown 1000:1000 /home/user
+chmod 644 /etc/passwd /etc/group
 
 setsid cttyhack setuidgid 1000 sh
 
