@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="900" height="440" font-family="'Segoe UI', 'Apple SD Gothic Neo', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrow2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="880" height="420" rx="16" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="450" y="44" text-anchor="middle" font-size="23" font-weight="700" fill="#1f2937">Virtual vs Physical Address</text>
+  <text x="450" y="70" text-anchor="middle" font-size="13" fill="#6b7280">CPU·커널은 virtual 로 접근하고, MMU 가 physical(RAM)로 변환한다</text>
+
+  <!-- virtual panel -->
+  <rect x="50" y="100" width="320" height="250" rx="12" fill="#e8f0fe" stroke="#4285f4" stroke-width="1.5"/>
+  <text x="210" y="126" text-anchor="middle" font-size="15" font-weight="700" fill="#1a73e8">가상 주소 공간 (virtual)</text>
+  <text x="210" y="146" text-anchor="middle" font-size="11" fill="#6b7280">CPU·커널이 보는 주소</text>
+  <rect x="70" y="168" width="280" height="64" rx="8" fill="#ffffff" stroke="#4285f4" stroke-width="1.3"/>
+  <text x="210" y="190" text-anchor="middle" font-size="12" font-weight="600" fill="#1f2937">modprobe_path (가상주소)</text>
+  <text x="210" y="212" text-anchor="middle" font-size="11" font-family="monospace" fill="#374151">0xffffffff8293d240 + vslide</text>
+  <text x="210" y="258" text-anchor="middle" font-size="10.5" font-family="monospace" fill="#6b7280">= vbase(0xffffffff81000000) + offset</text>
+  <rect x="70" y="288" width="280" height="46" rx="8" fill="#eef2ff" stroke="#93b4fb" stroke-width="1.2"/>
+  <text x="210" y="307" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a73e8">Virtual KASLR</text>
+  <text x="210" y="324" text-anchor="middle" font-size="10.5" fill="#475569">가상 공간 배치를 vslide 로 랜덤화</text>
+
+  <!-- MMU -->
+  <text x="450" y="172" text-anchor="middle" font-size="11" fill="#6b7280">주소 변환</text>
+  <rect x="400" y="184" width="100" height="48" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.4"/>
+  <text x="450" y="205" text-anchor="middle" font-size="14" font-weight="700" fill="#334155">MMU</text>
+  <text x="450" y="222" text-anchor="middle" font-size="10" fill="#6b7280">page table</text>
+  <line x1="350" y1="200" x2="400" y2="208" stroke="#6b7280" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <line x1="500" y1="208" x2="550" y2="200" stroke="#6b7280" stroke-width="2.2" marker-end="url(#arrow)"/>
+
+  <!-- independence link between KASLR tags -->
+  <line x1="352" y1="311" x2="548" y2="311" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="5 4" marker-start="url(#arrow2)" marker-end="url(#arrow2)"/>
+  <rect x="405" y="300" width="90" height="22" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="450" y="315" text-anchor="middle" font-size="10.5" font-weight="700" fill="#64748b">독립 (별개)</text>
+
+  <!-- physical panel -->
+  <rect x="530" y="100" width="320" height="250" rx="12" fill="#e6f6ec" stroke="#1a9c54" stroke-width="1.5"/>
+  <text x="690" y="126" text-anchor="middle" font-size="15" font-weight="700" fill="#1a8a4e">물리 메모리 RAM (physical)</text>
+  <text x="690" y="146" text-anchor="middle" font-size="11" fill="#6b7280">실제 바이트가 저장된 곳</text>
+  <rect x="550" y="168" width="280" height="64" rx="8" fill="#fff3d6" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="690" y="190" text-anchor="middle" font-size="12" font-family="monospace" font-weight="700" fill="#b45309">"/sbin/modprobe\0"</text>
+  <text x="690" y="212" text-anchor="middle" font-size="11" font-family="monospace" fill="#374151">physical base + 0x193d240</text>
+  <text x="690" y="258" text-anchor="middle" font-size="10.5" font-family="monospace" fill="#6b7280">= pbase(0x01000000) + offset</text>
+  <rect x="550" y="288" width="280" height="46" rx="8" fill="#e3f5ea" stroke="#86d3a5" stroke-width="1.2"/>
+  <text x="690" y="307" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1a8a4e">Physical KASLR</text>
+  <text x="690" y="324" text-anchor="middle" font-size="10.5" fill="#475569">RAM 적재 위치를 pslide 로 랜덤화</text>
+
+  <!-- bottom summary -->
+  <rect x="50" y="362" width="800" height="58" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="450" y="385" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1f2937">같은 modprobe_path — virtual 주소와 physical 주소는 '같은 바이트'를 가리키는 다른 좌표</text>
+  <text x="450" y="406" text-anchor="middle" font-size="11.5" fill="#6b7280">write primitive 가 가상주소 기반이면 virtual, 물리·struct page 기반이면 physical 이 필요</text>
+</svg>
