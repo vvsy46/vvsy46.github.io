@@ -26,7 +26,7 @@ ELF인지, 스크립트(#!)인지 확인 -> 파일 포맷을 확인하는 커널
 
 ### 1-1. 전체 흐름
 
-![modprobe_path LPE flow](/assets/img/linux_kernel_3/modprobe_path_lpe.svg){: width="720" .light .shadow }
+![modprobe_path LPE flow](/assets/img/linux_kernel_3/modprobe_path_lpe.svg){: width="720" .shadow }
 _modprobe_path 덮어쓰기부터 root 스크립트 실행까지_
 
 ### 1-2. modprobe_path address
@@ -38,7 +38,7 @@ _modprobe_path 덮어쓰기부터 root 스크립트 실행까지_
 
 여기서 `kernel_base`, `physical kernel base`, `page_offset_base`, `vmemmap_base` 모두 커널 메모리 주소와 관련 있지만 의미와 용도가 다르다.
 
-![Virtual vs Physical](/assets/img/linux_kernel_3/virtual_vs_physical.svg){: width="820" .light .shadow }
+![Virtual vs Physical](/assets/img/linux_kernel_3/virtual_vs_physical.svg){: width="820" .shadow }
 _같은 변수라도 virtual·physical 주소는 다르다 — MMU가 변환하고, 두 KASLR은 독립_
 
 ## 2. Virtual KASLR
@@ -64,7 +64,7 @@ runtime symbol = static symbol + virtual KASLR slide
 virtual slide = leaked runtime address - static symbol address
 ```
 
-![Virtual KASLR](/assets/img/linux_kernel_3/virtual_kaslr.svg){: width="720" .light .shadow }
+![Virtual KASLR](/assets/img/linux_kernel_3/virtual_kaslr.svg){: width="720" .shadow }
 _정적 심볼 주소에 slide를 더하면 런타임 주소가 된다_
 
 이 slide만 알면 `modprobe_path`의 **가상주소**는 바로 계산된다.  
@@ -100,7 +100,7 @@ modprobe physical address
 = 0x01000000 + physical slide + 0x193d240
 ```
 
-![Physical KASLR](/assets/img/linux_kernel_3/physical_kaslr.svg){: width="760" .light .shadow }
+![Physical KASLR](/assets/img/linux_kernel_3/physical_kaslr.svg){: width="760" .shadow }
 _물리주소는 physical slide로만 결정 — virtual slide와 독립_
 
 ## 4. Direct Map
@@ -114,7 +114,7 @@ direct-map virtual address = page_offset_base + physical address
 physical address = virtual address - page_offset_base
 ```
 
-![Direct Map](/assets/img/linux_kernel_3/direct_map.svg){: width="720" .light .shadow }
+![Direct Map](/assets/img/linux_kernel_3/direct_map.svg){: width="720" .shadow }
 _RAM을 page_offset_base부터 연속 매핑_
 
 `page_offset_base` 역시 부팅할 때 randomize될 수 있다.  
@@ -128,7 +128,7 @@ _RAM을 page_offset_base부터 연속 매핑_
 x86-64의 전형적인 구성에서 `sizeof(struct page)`는 `0x40`(64바이트), page 크기는 `0x1000`(4KB)이다.  
 다만 `sizeof(struct page)`는 커널 버전과 config(예: `CONFIG_MEMCG`, `CONFIG_SLUB` 관련 필드 등)에 따라 달라질 수 있으므로, 아래 식에 대입하기 전에 대상 커널의 실제 값을 확인하는 것이 좋다.
 
-![vmemmap](/assets/img/linux_kernel_3/vmemmap.svg){: width="760" .light .shadow }
+![vmemmap](/assets/img/linux_kernel_3/vmemmap.svg){: width="760" .shadow }
 _PFN으로 struct page ↔ physical page 대응_
 
 ```text
