@@ -5,45 +5,52 @@ categories: [Kernel, Pwnable]
 tags: [linux, kernel, kaslr, vmemmap, modprobe_path]
 ---
 
-커널 익스플로잇에서 자주 쓰이는 최종 목표 중 하나는 `modprobe_path` 전역 문자열을 덮어 **root 권한 실행(LPE)** 을 얻는 것이다.  
+최종 `modprobe_path`를 덮어 **root**를 얻는 것이다.  
 
-## 1. modprobe_path overwrite → LPE
+## 1. overwrite modprobe_path -> root
 
-`modprobe_path`는 커널이 커널 모듈을 자동 로드할 때 실행하는 usermode helper의 경로다.  
-기본값은 `/sbin/modprobe`이고, 커널은 이 경로의 프로그램을 `call_usermodehelper()`로 **root 권한, 초기 네임스페이스**에서 실행한다.  
-따라서 이 문자열을 공격자가 만든 스크립트 경로로 바꿔 두면, 커널이 대신 그 스크립트를 root로 실행해 준다.
+`modprobe_path`는 커널이 모듈을 자동 로드할 때 실행하는 usermode helper의 경로 문자열이다.  
+기본값은 `/sbin/modprobe`이고, 커널은 이 경로의 프로그램을 `call_usermodehelper()`로 **root 권한**으로 실행한다.  
+따라서 이 문자열을 공격자 스크립트 경로로 바꿔 두면, 커널이 대신 그 스크립트를 root로 실행해 준다.
 
-커널이 modprobe를 호출하도록 유도하는 대표적인 방법은 **포맷을 알 수 없는 실행 파일**을 실행하는 것이다.
+커널이 modprobe를 호출하게 만드는 대표적인 방법은 **포맷을 알 수 없는 실행 파일**을 실행하는 것이다.
 
-- 유저가 `execve()`로 파일을 실행하면 커널은 등록된 binfmt 핸들러들을 차례로 시도한다.
-- 어떤 핸들러도 매직을 인식하지 못하면, 커널은 `request_module("binfmt-%04x", magic)`을 호출해 해당 포맷을 처리할 모듈을 로드하려 한다.
+- `execve()`로 파일을 실행하면 커널은 등록된 binfmt 핸들러들을 차례로 시도한다.
+- 아무도 매직을 인식 못 하면 `request_module("binfmt-%04x", magic)`을 호출해 모듈을 로드하려 한다.
 - 이 `request_module` → `call_modprobe()` → `call_usermodehelper()` 경로에서 우리가 덮어쓴 `modprobe_path`가 root로 실행된다.
 
-즉 매직이 깨진 파일을 하나 실행하는 것만으로, 커널이 우리가 심어 둔 경로를 root로 불러 준다.
+즉 매직이 깨진 파일 하나만 실행하면, 커널이 우리가 심어 둔 경로를 root로 불러 준다.
 
-> binfnt 핸들러란  
-ELF인지, 스크립트(#!)인지 확인 -> 파일 포맷을 확인하는 커널 내부 모듈
+![modprobe_path LPE flow](/assets/img/linux_kernel_3/modprobe_path_lpe.svg) <!--{: width="720" .shadow }-->
 
-### 1-1. 전체 흐름
+이를 위해 두 가지 조건이 필요하다.
 
-![modprobe_path LPE flow](/assets/img/linux_kernel_3/modprobe_path_lpe.svg){: width="720" .shadow }
-_modprobe_path 덮어쓰기부터 root 스크립트 실행까지_
+1. `modprobe_path`가 **어디 있는지(주소)** 알아야 한다.
+2. 내가 가진 **write 수단(primitive)** 으로 그 위치에 **도달**할 수 있어야 한다.
 
-### 1-2. modprobe_path address
+이 두 가지를 이해하려면 커널이 메모리를 어떻게 바라보는지 알아야 한다.
 
-위 시나리오의 전제는 `modprobe_path`가 있는 주소에 쓸 수 있다는 것이다. 그러려면 두 가지가 필요하다.
+## 2. page & PFN
+메모리를 바이트 하나하나 관리하면 너무 잘아서, 커널은 물리 메모리(RAM)를 **page(보통 4KB = `0x1000`)** 단위로 관리한다.  
+그리고 물리 메모리의 각 page에 **0, 1, 2, … 순서대로 붙인 번호가 PFN(Page Frame Number)** 이다.   
+즉 PFN은 "이 page가 물리 메모리의 몇 번째 조각인가"이다.
 
-1. `modprobe_path`의 **런타임 주소**를 알아야 한다. KASLR 때문에 정적 심볼 주소를 그대로 쓸 수 없다.
-2. 사용 중인 write primitive의 성격(가상주소 쓰기냐, physical/`struct page` 단위 쓰기냐)에 맞게 그 주소를 **변환**할 수 있어야 한다.
+![page and PFN](/assets/img/linux_kernel_3/page_pfn.svg)<!-- {: width="760" .shadow }-->
 
-여기서 `kernel_base`, `physical kernel base`, `page_offset_base`, `vmemmap_base` 모두 커널 메모리 주소와 관련 있지만 의미와 용도가 다르다.
+## 3. 가상주소 vs 물리주소
 
-![Virtual vs Physical](/assets/img/linux_kernel_3/virtual_vs_physical.svg){: width="820" .shadow }
-_같은 변수라도 virtual·physical 주소는 다르다 — MMU가 변환하고, 두 KASLR은 독립_
+CPU와 커널이 코드에서 쓰는 주소는 전부 **가상주소(virtual address)** 다.  
+이걸 하드웨어(MMU)가 페이지 테이블을 보고 실제 RAM 위치인 **물리주소(physical address)** 로 번역해서 접근한다.
 
-## 2. Virtual KASLR
+![Virtual vs Physical](/assets/img/linux_kernel_3/virtual_vs_physical.svg) <!--{: width="820" .shadow } -->  
+커널이 같은 RAM을 여러 방식으로 매핑하기 때문에 같은 물리 바이트가 여러 개의 가상주소로 보일 수 있다.
 
-`vmlinux`의 심볼 주소는 정적 분석을 기준으로 정해져 있다.
+## 4. KASLR
+정적 분석에서 본 심볼 주소를 그대로 쓸 수 없는 이유가 KASLR이다.  
+커널 이미지의 배치가 부팅마다 랜덤화되는데, **가상 배치와 물리 배치가 따로** 랜덤화된다.
+
+### 4-1. Virtual KASLR
+`vmlinux` 심볼 주소는 정적으로 고정돼 있다.
 
 ```text
 _text          = 0xffffffff81000000
@@ -51,134 +58,121 @@ commit_creds   = 0xffffffff810c9b40
 modprobe_path  = 0xffffffff8293d240
 ```
 
-하지만 KASLR이 활성화되면 실제 부팅 시 커널 image가 다른 virtual address에 배치된다.
+부팅 시 커널 이미지가 다른 가상주소에 올라가므로, 실제 주소는 slide 만큼 밀린다.
 
 ```text
 runtime symbol = static symbol + virtual KASLR slide
+virtual slide  = leaked runtime address - static symbol address
 ```
 
-따라서 kernel text나 전역 변수, 함수 포인터를 사용하려면 먼저 virtual KASLR slide를 알아야 한다.  
-일반적으로 커널 포인터를 leak한 뒤, 알고 있는 static symbol 주소를 빼서 구한다.
+![Virtual KASLR](/assets/img/linux_kernel_3/virtual_kaslr.svg)  
+이 slide만 알면 `modprobe_path`의 **가상주소**가 나온다.
 
-```text
-virtual slide = leaked runtime address - static symbol address
-```
-
-![Virtual KASLR](/assets/img/linux_kernel_3/virtual_kaslr.svg){: width="720" .shadow }
-_정적 심볼 주소에 slide를 더하면 런타임 주소가 된다_
-
-이 slide만 알면 `modprobe_path`의 **가상주소**는 바로 계산된다.  
-가상주소에 직접 쓰는 write primitive라면 여기서 끝이다.  
-하지만 physical/`struct page` 단위로 쓰는 primitive라면 아래 개념들이 더 필요하다.
-
-## 3. Physical KASLR
-
-Virtual KASLR은 커널 image가 보이는 **가상주소**를 바꾼다.  
-Physical KASLR은 kernel image가 RAM에 적재되는 **물리주소**를 바꾼다.
+### 4-2. Physical KASLR
+Virtual KASLR은 커널 이미지가 보이는 **가상주소**를, Physical KASLR은 RAM에 적재되는 **물리주소**를 바꾼다.  
+**두 slide는 서로 독립**이다.
 
 ```text
 kernel virtual base  = 0xffffffff81000000 + virtual slide
 kernel physical base = 0x01000000         + physical slide
 ```
 
-두 slide는 별개의 값이다.  
-따라서 virtual KASLR을 leak했다고 해서 `modprobe_path`의 물리주소를 바로 알 수 있는 것은 아니다.
-
-심볼의 kernel image 내부 offset은 KASLR과 무관하게 일정하다.
+이미지 내부 offset은 KASLR과 무관하게 일정하므로, 물리주소는 물리 배치로만 정해진다.
 
 ```text
-modprobe_path offset
-= 0xffffffff8293d240 - 0xffffffff81000000
-= 0x193d240
+modprobe_path offset  = 0xffffffff8293d240 - 0xffffffff81000000 = 0x193d240
+modprobe 물리주소 P    = kernel physical base + 0x193d240
+                     = 0x01000000 + physical slide + 0x193d240
 ```
 
-따라서 `modprobe_path`의 물리주소는 다음과 같다.
+![Physical KASLR](/assets/img/linux_kernel_3/physical_kaslr.svg)
+
+## 5. Write Primitive
+취약점에서 얻은 **write primitive의 성격**에 따라 modprobe_path에 도달하는 법이 달라진다.
+
+- **(A) 임의 가상주소에 쓸 수 있는 경우** (예: ROP로 `memcpy` 호출)  
+  → `modprobe_path`의 **가상주소**만 있으면 끝.
+- **(B) 물리 메모리 / `struct page` 단위로만 쓸 수 있는 경우** (예: 조작된 `struct page *`, DMA, page 단위 R/W)  
+  → 목표의 **물리주소 P**를 구한 뒤, 그 물리 page를 실제로 건드릴 **가상 좌표**로 변환해야 한다.
+
+**(B)를 위해 필요한 두 도구가 바로 direct map과 vmemmap이다.**
+
+## 6. Direct Map
+**문제:** 커널도 결국 가상주소로만 메모리에 접근한다.  
+물리주소 P에 있는 바이트를 쓰고 싶다면, **P를 가리키는 가상주소**가 필요하다.
+
+**해결:** 커널은 부팅 때 **RAM 전체를 자기 가상 공간에 순서 그대로 1:1로 매핑**해 둔다.  
+이 거울 영역이 direct map(physmap)이고, 시작 주소가 `page_offset_base`다.
+
+![Direct Map](/assets/img/linux_kernel_3/direct_map.svg)
 
 ```text
-modprobe physical address
-= kernel physical base + 0x193d240
-= 0x01000000 + physical slide + 0x193d240
+direct-map 가상주소 = page_offset_base + 물리주소
 ```
 
-![Physical KASLR](/assets/img/linux_kernel_3/physical_kaslr.svg){: width="760" .shadow }
-_물리주소는 physical slide로만 결정 — virtual slide와 독립_
+`page_offset_base`도 부팅 때 randomize되므로, 물리주소 P를 알아도 이 base를 모르면 접근용 가상주소를 못 만든다.
 
-## 4. Direct Map
+## 7. vmemmap 과 struct page
+**문제:** 커널은 각 물리 page의 상태(참조 수, 플래그 등)를 관리해야 하므로, **page 하나마다 `struct page`라는 메타데이터 구조체**를 둔다.  
+그리고 수많은 커널 API가 물리주소가 아니라 **`struct page *`** 로 page를 주고받는다.  
+-> 그래서 primitive가 이 계열이면 목표 page의 `struct page *`가 필요하다.
 
-커널은 RAM을 자신의 virtual address 공간에 연속적으로 매핑한다. 이를 direct map 또는 physmap이라고 부른다.
-
-단순화하면 물리주소와 direct-map 주소의 관계는 다음과 같다.
-
-```text
-direct-map virtual address = page_offset_base + physical address
-physical address = virtual address - page_offset_base
-```
-
-![Direct Map](/assets/img/linux_kernel_3/direct_map.svg){: width="720" .shadow }
-_RAM을 page_offset_base부터 연속 매핑_
-
-`page_offset_base` 역시 부팅할 때 randomize될 수 있다.  
-따라서 임의의 물리주소를 알고 있어도 `page_offset_base`를 모르면 그 주소를 직접 kernel virtual address로 변환할 수 없다.
-
-## 5. vmemmap
-
-커널은 각각의 physical page를 관리하기 위해 `struct page`를 사용한다.  
-모든 physical page에 대응하는 `struct page` 배열이 매핑된 영역이 `vmemmap`이다.
-
-x86-64의 전형적인 구성에서 `sizeof(struct page)`는 `0x40`(64바이트), page 크기는 `0x1000`(4KB)이다.  
-다만 `sizeof(struct page)`는 커널 버전과 config(예: `CONFIG_MEMCG`, `CONFIG_SLUB` 관련 필드 등)에 따라 달라질 수 있으므로, 아래 식에 대입하기 전에 대상 커널의 실제 값을 확인하는 것이 좋다.
+**해결:** 모든 물리 page의 `struct page`를 **PFN 순서대로 모아 둔 배열**이 vmemmap이고, 시작이 `vmemmap_base`다.  
+`struct page` 하나 크기는 보통 `0x40`(64B).
 
 ![vmemmap](/assets/img/linux_kernel_3/vmemmap.svg){: width="760" .shadow }
-_PFN으로 struct page ↔ physical page 대응_
+_PFN 으로 struct page ↔ physical page 가 1:1 대응_
 
 ```text
-PFN = physical address / 0x1000
-struct page address = vmemmap_base + PFN * sizeof(struct page)
+struct page 주소 = vmemmap_base + PFN × 0x40      (PFN = 물리주소 / 0x1000)
+그 page 의 실제 데이터 주소:  page_address = page_offset_base + PFN × 0x1000
 ```
+즉 `vmemmap_base`를 알면 임의 물리 page의 `struct page *`를 만들 수 있고, 반대로 `struct page *`에서 물리주소·direct-map 주소로 되돌릴 수 있다.
 
-반대로 `struct page *`에서 대응하는 physical address를 구하면 다음과 같다.
+## 8. 정리
+
+#### 구체적 예시 (slide 값은 가정)
+> - `virtual slide = 0x1e00000`  
+- `physical slide = 0x3400000`  
+- `page_offset_base = 0xffff888000000000`  
+- `vmemmap_base = 0xffffea0000000000`  
 
 ```text
-PFN = (page - vmemmap_base) / sizeof(struct page)
-physical address = PFN * 0x1000
+① 이미지 VA   = 0xffffffff8293d240 + 0x1e00000        = 0xffffffff8473d240
+물리주소 P    = 0x01000000 + 0x3400000 + 0x193d240     = 0x05d3d240
+PFN          = 0x05d3d240 / 0x1000                    = 0x5d3d
+② direct-map = 0xffff888000000000 + 0x05d3d240        = 0xffff888005d3d240
+③ struct page= 0xffffea0000000000 + 0x5d3d × 0x40     = 0xffffea0000174f40
 ```
 
-해당 page가 direct map에서 보이는 주소는 다음과 같다.
+- **①·②** 는 **같은 바이트(`"/sbin/modprobe"`)** 를 가리키는 서로 다른 가상주소. 어느 쪽에 써도 같은 변수가 바뀐다.
+- **③** 은 그 page를 *설명하는* 구조체 주소라 **내용이 다르다**(문자열이 아님). 대신 ③에서 산술로 ②를 유도해 실제 바이트에 도달한다.
+
+**(A) 가상주소 write면 ①만, (B) 물리/struct page write면 P→②/③로 변환.**
+
+![kernel memory overview](/assets/img/linux_kernel_3/kernel_memory_overview.svg)  
+`modprobe_path`는 RAM의 바이트 한 덩어리지만, 커널이 같은 물리 메모리를 여러 방식으로 매핑해 두기 때문에 **가상 공간에서 동시에 여러 주소로 보인다.**
+
+| 좌표 | 어디서 | 무엇 |
+|---|---|---|---|
+| ① 이미지 VA | kernel image 매핑 | modprobe_path 심볼의 가상주소 |
+| ② direct-map VA | direct map 거울 | 같은 물리 page의 또 다른 가상주소 |
+| ③ struct page* | vmemmap 배열 | 그 page를 *설명하는* 메타데이터 주소 |
+
+## 9. vmemmap_base 구하기 (leak)
+
+(B) 경로를 쓰려면 `vmemmap_base`를 알아야 한다. 핵심 아이디어는 **공격자가 값을 정한 `struct page *`를 커널이 주소 변환하게 만들고, 그 결과를 관찰**하는 것이다.
 
 ```text
-page_address(page)
-= page_offset_base
-  + ((page - vmemmap_base) / sizeof(struct page)) * 0x1000
+result address = page_offset_base + (fake_page - vmemmap_base) × 0x40
 ```
 
-`sizeof(struct page)`가 `0x40`인 경우 `0x1000 / 0x40 = 0x40`이므로 위 식은 다음처럼 정리된다.
+`fake_page`는 공격자가 정하고 `result address`는 leak으로 얻으므로, direct map 정렬 조건과 주소 범위를 적용해 `vmemmap_base`를 역산한다.  
+vmemmap 전체를 blind brute force하는 것과 달리, 커널이 실제로 한 변환 결과를 역으로 푸는 방식이다.
 
-```text
-page_address(page)
-= page_offset_base + (page - vmemmap_base) * 0x40
-```
+### 9-1. 예시 — io_uring READ_FIXED 로 Oops fault address leak
 
-즉 `vmemmap_base`를 알면 원하는 physical address에 대응하는 `struct page *`를 만들 수 있다. `struct page` 단위 write primitive로 1절의 modprobe_path overwrite에 도달하려면 이 변환이 필요하다.
-
-## 6. 커널 주소 변환을 이용한 vmemmap_base leak
-
-`vmemmap_base`는 다음과 같은 방법으로 구할 수 있다.  
-핵심 아이디어는 **공격자가 값을 정한 `struct page *`를 커널이 주소 변환하게 만들고, 그 변환 결과를 관찰**하는 것이다.
-- 공격자가 임의의 `struct page *`(= `fake_page`)를 커널 경로에 흘려보낸다.
-- 커널이 `page_address()`류의 변환을 수행하면서 그 주소를 사용/노출한다.
-- 그 결과 주소를 leak한 뒤, 아래 관계식을 역으로 풀어 `vmemmap_base`를 복구한다.
-
-```text
-result address
-= page_offset_base + (fake_page - vmemmap_base) * 0x40
-```
-
-`fake_page`는 공격자가 정한 값이고 `result address`는 leak으로 얻는다.  
-여기에 direct map 정렬 조건과 가능한 주소 범위를 적용하면 `vmemmap_base`를 역산할 수 있다.
-
-### 6-1. READ_FIXED: Oops fault address leak
-
-구체적인 한 가지 예시는, 손상시킨 `pipe_buffer.page`에 `fake_page`를 넣고 커널이 그 page를 매핑하게 만들어 Oops를 유도하는 것이다.
+손상시킨 `pipe_buffer.page`에 `fake_page`를 넣고 커널이 그 page를 매핑하게 만들어 Oops를 유도한다.
 
 ```c
 pipe_buffer.page   = fake_page;
@@ -186,70 +180,53 @@ pipe_buffer.offset = 0;
 pipe_buffer.len    = 16;
 ```
 
-손상된 pipe에 `io_uring READ_FIXED`를 수행하면 커널은 `fake_page`를 정상적인 `struct page *`라고 생각한다.
-
 ```text
-io_read_fixed
-  -> anon_pipe_read
-  -> copy_page_to_iter
-  -> kmap_local_page(fake_page)
-  -> invalid source access
+io_read_fixed 
+  -> anon_pipe_read 
+  -> copy_page_to_iter 
+  -> kmap_local_page(fake_page) 
+  -> invalid access 
   -> Oops
 ```
 
-이때 fault address가 `CR2` 또는 Oops register에 출력되며, 이 값이 위 식의 `result address`가 된다.  
-`pipe_buffer` 외에도 `struct page *`를 다루는 다른 경로(예: 각종 page cache/DMA/graphics 관련 primitive)로도 같은 관계식을 만들 수 있다.
+이때 `CR2`/Oops 레지스터에 찍히는 fault address가 위 식의 `result address`가 된다.  
+`pipe_buffer` 외에 `struct page *`를 다루는 다른 경로로도 같은 관계식을 만들 수 있다.
 
-## 7. 4-level Paging과 5-level Paging
+## 10. 4-level vs 5-level Paging
 
-x86-64의 4-level paging과 5-level paging은 사용할 수 있는 virtual address 범위가 다르다.
-
-```text
-4-level paging: 48-bit virtual address
-5-level paging: 57-bit virtual address
-```
-
-5-level paging에서는 kernel memory layout의 randomization 범위도 훨씬 넓어진다.  
-따라서 4-level 환경에서 사용하던 좁은 `vmemmap_base` brute force 범위를 그대로 적용할 수 없다.
-
-하지만 page 변환 관계 자체는 같다.
+x86-64의 paging 레벨에 따라 가상주소 폭이 다르다.
 
 ```text
-struct page *
-  -> PFN
-  -> physical address
-  -> direct-map address
+4-level: 48-bit virtual address
+5-level: 57-bit virtual address
 ```
 
-## 8. 전체 Exploit Flow
+5-level에서는 kernel memory layout randomization 범위도 넓어져, 4-level용 좁은 `vmemmap_base` brute force 범위를 그대로 쓸 수 없다.  
+다만 `struct page → PFN → 물리주소 → direct-map` 변환 관계 자체는 동일하다.
 
-앞의 개념들을 순서대로 엮으면, modprobe_path LPE는 대체로 다음 흐름으로 완성된다.
+## 11. 전체 Exploit Flow
 
 ```text
-virtual KASLR leak
-  -> runtime kernel symbol address 계산
+[주소 구하기]
+virtual KASLR leak     -> modprobe_path 의 가상주소(①) 계산
 
-struct page* 변환 primitive
-  -> 커널이 변환한 주소 leak
-  -> vmemmap_base 복구
-
-physical KASLR 처리
-  -> modprobe_path 의 physical address 확인
-  -> physical address 를 struct page* 로 변환
-  -> page 단위 read/write primitive 로 modprobe_path overwrite
-
-트리거
-  -> 매직 깨진 파일 execve
-  -> 커널이 modprobe_path(= 우리 스크립트)를 root 로 실행  ==> LPE
+(A) 가상주소 write primitive 이면 여기서 바로:
+    modprobe_path(①) 에 "/tmp/x" 쓰기  ---------------------┐
+                                                            │
+(B) 물리/struct page primitive 이면:                          │
+    vmemmap_base leak  -> struct page* 변환 가능             │
+    physical KASLR     -> modprobe_path 물리주소 P           │
+    P -> struct page*(③) / direct-map VA(②) 로 변환          │
+    ②/③ 를 통해 "/tmp/x" 쓰기  ------------------------------┤
+                                                            ▼
+[트리거]  매직 깨진 파일 execve -> 커널이 modprobe_path(=/tmp/x)를 root 로 실행  ==> LPE
 ```
-
-> 위 흐름의 leak/overwrite 단계에서 쓰이는 primitive는 대상마다 다르다. 6절의 pipe_buffer + `io_uring READ_FIXED`는 그중 한 가지 구현 예시일 뿐이다. 가상주소에 직접 쓰는 primitive라면 `page_offset_base`/`vmemmap_base` 단계는 건너뛰고 2절의 가상주소 계산만으로 충분하다.
 
 정리하면 각 base의 역할은 다음과 같다.
 
-| 값 | 의미 | 익스플로잇에서의 용도 |
+| 값 | 의미 | 쓰임 |
 |---|---|---|
-| virtual KASLR slide | kernel image의 가상주소 이동량 | 함수와 전역 심볼의 runtime address 계산 |
-| physical KASLR slide | kernel image의 물리주소 이동량 | `modprobe_path`의 physical address 계산 |
-| `page_offset_base` | RAM direct map의 시작 주소 | physical address와 kernel virtual address 변환 |
-| `vmemmap_base` | `struct page` 배열의 시작 주소 | physical page에 대응하는 `struct page *` 생성 |
+| virtual KASLR slide | 이미지의 가상주소 이동량 | 심볼의 런타임 가상주소(①) 계산 |
+| physical KASLR slide | 이미지의 물리주소 이동량 | modprobe_path 물리주소 P 계산 |
+| `page_offset_base` | direct map(RAM 거울) 시작 | 물리주소 ↔ 가상주소(②) 변환 |
+| `vmemmap_base` | struct page 배열 시작 | 물리 page ↔ struct page*(③) 변환 |
