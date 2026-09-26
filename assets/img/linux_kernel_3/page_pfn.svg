@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 300" width="880" height="300" font-family="'Segoe UI', 'Apple SD Gothic Neo', Helvetica, Arial, sans-serif">
+  <rect x="10" y="10" width="860" height="280" rx="16" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="440" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#1f2937">물리 메모리 — page 와 PFN</text>
+  <text x="440" y="66" text-anchor="middle" font-size="13" fill="#6b7280">RAM 을 4KB(0x1000) 조각으로 나눈 것이 page, 그 일련번호가 PFN</text>
+
+  <!-- address ticks -->
+  <text x="60"  y="102" text-anchor="middle" font-size="10" font-family="monospace" fill="#6b7280">0x0000</text>
+  <text x="180" y="102" text-anchor="middle" font-size="10" font-family="monospace" fill="#6b7280">0x1000</text>
+  <text x="300" y="102" text-anchor="middle" font-size="10" font-family="monospace" fill="#6b7280">0x2000</text>
+  <text x="420" y="102" text-anchor="middle" font-size="10" font-family="monospace" fill="#6b7280">0x3000</text>
+  <text x="540" y="102" text-anchor="middle" font-size="10" font-family="monospace" fill="#6b7280">0x4000</text>
+  <text x="660" y="102" text-anchor="middle" font-size="10" font-family="monospace" fill="#6b7280">0x5000</text>
+  <text x="780" y="102" text-anchor="middle" font-size="10" font-family="monospace" fill="#6b7280">0x6000</text>
+
+  <!-- page cells -->
+  <g font-size="12" fill="#374151" text-anchor="middle">
+    <rect x="60"  y="110" width="120" height="66" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2"/><text x="120" y="149">page (4KB)</text>
+    <rect x="180" y="110" width="120" height="66" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2"/><text x="240" y="149">page</text>
+    <rect x="300" y="110" width="120" height="66" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2"/><text x="360" y="149">page</text>
+    <rect x="420" y="110" width="120" height="66" fill="#fde3a7" stroke="#e5900b" stroke-width="2"/><text x="480" y="149" font-weight="700" fill="#b45309">page</text>
+    <rect x="540" y="110" width="120" height="66" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2"/><text x="600" y="149">page</text>
+    <rect x="660" y="110" width="120" height="66" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2"/><text x="720" y="149">page</text>
+  </g>
+
+  <!-- PFN labels -->
+  <g font-size="12" font-weight="700" text-anchor="middle" fill="#334155">
+    <text x="120" y="196">PFN 0</text>
+    <text x="240" y="196">PFN 1</text>
+    <text x="360" y="196">PFN 2</text>
+    <text x="480" y="196" fill="#b45309">PFN 3</text>
+    <text x="600" y="196">PFN 4</text>
+    <text x="720" y="196">PFN 5</text>
+  </g>
+
+  <!-- formula -->
+  <rect x="60" y="214" width="720" height="60" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="420" y="238" text-anchor="middle" font-size="13" font-family="monospace" font-weight="700" fill="#1f2937">PFN = 물리주소 / 0x1000</text>
+  <text x="420" y="260" text-anchor="middle" font-size="11.5" fill="#6b7280">예) 물리주소 0x3abc → 0x3abc / 0x1000 = 3 → PFN 3 (주황)</text>
+</svg>
