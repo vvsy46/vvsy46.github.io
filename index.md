@@ -73,10 +73,20 @@ permalink: /
   .sev-high { background: rgba(249, 115, 22, 0.18); color: #f97316; }
   .sev-med  { background: rgba(234, 179, 8, 0.22);  color: #ca8a04; }
   .sev-low  { background: rgba(34, 197, 94, 0.18);  color: #22c55e; }
+
+  /* 레이아웃 기본 제목 대신 아래 터미널 스타일 whoami 제목 사용 */
+  .dynamic-title { display: none !important; }
 </style>
 
-# <span class="term-symbol">$</span> <span class="term-cmd">uname -a</span><span class="blink"></span>
-> * `Seungyeon Park (sy46)`
+# <span class="term-symbol">$</span> <span class="term-cmd">whoami</span><span class="blink"></span>
+> **취약점 분석 및 익스플로잇 분야에서 경험을 쌓고 있는 보안 연구원입니다.**
+>
+> **CVE 다수 등록 및 Pwn2Own Automotive 2026에 참가하여 성공적으로 상금을 획득한 경험이 있습니다.**
+
+---
+
+# <span class="term-symbol">$</span> <span class="term-cmd">uname -a</span>
+> * `Seungyeon Park (sy46 | oshackerwott)`
 > * `Inha University Computer Science & Engineering`
 > * `GPA`  `4.18/4.5`
 > * `OPIc IH` (26.01)
@@ -179,5 +189,8 @@ permalink: /
 ---
 
 # <span class="term-symbol">$</span> <span class="term-cmd">Awards</span>
-> * `Team BoB::Takedown | Pwn2own Automotive 2026 Winner (Charx-SEC-31XX, Grizzl-e)`
-> * `Team Three-Piece | Inha Univ Capstone`
+> * `Pwn2Own Automotive 2026` **(Team BoB::TakeDown, 26.01.21)**
+>   * `Charx SEC-31XX` ($6,750)
+>   * `Grizzl-E Smart` ($15,000)
+> * `인하대학교 캡스톤디자인 발표회 우수상` **(Team Three-Piece, 26.06.13)**
+>   * `멀티에이전트 기반 소스코드 보안 자동화 서비스`
