@@ -79,9 +79,9 @@ permalink: /
 </style>
 
 # <span class="term-symbol">$</span> <span class="term-cmd">whoami</span><span class="blink"></span>
-> **취약점 분석 및 익스플로잇 분야에서 경험을 쌓고 있는 보안 연구원입니다.**
+> 취약점 분석 및 익스플로잇 분야에서 경험을 쌓고 있는 보안 연구원입니다.
 >
-> **CVE 다수 등록 및 Pwn2Own Automotive 2026에 참가하여 성공적으로 상금을 획득한 경험이 있습니다.**
+> CVE 다수 등록 및 Pwn2Own Automotive 2026에 참가하여 성공적으로 상금을 획득한 경험이 있습니다.
 
 ---
 
@@ -175,6 +175,12 @@ permalink: /
       <td><span class="sev sev-high">7.0 · High</span></td>
       <td>CWE-362, CWE-416</td>
     </tr>
+    <tr>
+      <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-1034/">[Pwn2Own] CVE-2026-131812</a></td>
+      <td>Grizzl-E Smart 40A</td>
+      <td><span class="sev sev-high">7.5 · High</span></td>
+      <td>CWE-122</td>
+    </tr>
   </tbody>
 </table>
 </div>
@@ -189,8 +195,5 @@ permalink: /
 ---
 
 # <span class="term-symbol">$</span> <span class="term-cmd">Awards</span>
-> * `Pwn2Own Automotive 2026` **(Team BoB::TakeDown, 26.01.21)**
->   * `Charx SEC-31XX` ($6,750)
->   * `Grizzl-E Smart` ($15,000)
-> * `인하대학교 캡스톤디자인 발표회 우수상` **(Team Three-Piece, 26.06.13)**
->   * `멀티에이전트 기반 소스코드 보안 자동화 서비스`
+> * `Team BoB::Takedown | Pwn2own Automotive 2026 Winner (Charx-SEC-31XX, Grizzl-e)`
+> * `Team Three-Piece | Inha Univ Capstone`
