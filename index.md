@@ -140,19 +140,19 @@ permalink: /
       <td>CWE-639, CWE-863</td>
     </tr>
     <tr>
-      <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-507/">[Pwn2Own] ZDI-CAN-29108 · CVE-2026-44095</a></td>
+      <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-507/">[Pwn2Own] CVE-2026-44095</a></td>
       <td>CHARX-SEC-31XX</td>
       <td><span class="sev sev-high">7.8 · High</span></td>
       <td>CWE-78</td>
     </tr>
     <tr>
-      <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-508/">[Pwn2Own] ZDI-CAN-29109 · CVE-2026-44096</a></td>
+      <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-508/">[Pwn2Own] CVE-2026-44096</a></td>
       <td>CHARX-SEC-31XX</td>
       <td><span class="sev sev-high">7.8 · High</span></td>
       <td>CWE-78</td>
     </tr>
     <tr>
-      <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-513/">[Pwn2Own] ZDI-CAN-29110 · CVE-2026-44097</a></td>
+      <td class="cid"><a href="https://www.zerodayinitiative.com/advisories/ZDI-26-513/">[Pwn2Own] CVE-2026-44097</a></td>
       <td>CHARX-SEC-31XX</td>
       <td><span class="sev sev-low">2.4 · Low</span></td>
       <td>CWE-434</td>
